@@ -1,79 +1,110 @@
 import React, { Component } from "react";
 import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-community/async-storage";
 import ImagePicker from "react-native-image-picker";
-
-import { distanceInWords } from 'date-fns';
-import pt from 'date-fns/locale/pt';
-
-import api from "../../services/api";
-
-import Icon from "react-native-vector-icons";
+import { distanceInWords } from "date-fns";
+import pt from "date-fns/locale/pt";
+import RNFS from "react-native-fs";
+import FileViewer from "react-native-file-viewer";
+import socket from "socket.io-client";
 
 import styles from "./styles";
+import api from "../../services/api";
 
 export default class Box extends Component {
-  state = { box: {} };
+  state = {
+    box: ""
+  };
 
   async componentDidMount() {
-    const box = await AsyncStorage.getItem("@Mobille:box");
-    const response = await api.get(`boxes/${box}`);
+    const box = await AsyncStorage.getItem("@RocketBox:box");
+    this.subscribeToNewFile(box);
 
+    const response = await api.get(`boxes/${box}`);
     this.setState({ box: response.data });
   }
 
-  handleUpload = () => {
-    ImagePicker.launchImageLibrary({}, async upload => {
-      const data = new FormData();
-      const [prefix,suffix] = upload.fileName.split(".");
-      const ext = suffix.toLowerCase() === "heic" ? "jpg" : suffix;
+  subscribeToNewFile = async box => {
+    const io = socket("https://week-6-b.herokuapp.com");
 
-      data.append("file", {
-        uri: upload.uri,
-        type: upload.type,
-        name: `${prefix}.${ext}`
+    io.emit("connectRoom", box);
+    io.on("file", data => {
+      this.setState({
+        box: { ...this.state.box, files: [data, ...this.state.box.files] }
       });
-
-      api.post(`boxes/${this.state.box._id}`, data);
-    }
     });
   };
-}
 
   renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => } style={styles} >
+    //{} para definir apenas o campo que eu quero pegar
+    <TouchableOpacity onPress={() => this.openFile(item)} style={styles.file}>
       <View style={styles.fileInfo}>
-        <Icon name="insert-drive-file" size={24} color="#A5CFFF" />
+        <Icon name="insert-drive-file" size={24} color="#a5cfff" />
         <Text style={styles.fileTitle}>{item.title}</Text>
       </View>
-
-      <Text style={styles.fileDate}>
-        há{""}
-        {distanceInWords(item.createdAt, new Date(), {
-          locale: pt
-        })}
-      </Text>
+      <View style={styles.fileDateContainer}>
+        <Text style={styles.fileDate}>
+          Publicado há{" "}
+          {distanceInWords(item.createdAt, new Date(), { locale: pt })}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
+
+  openFile = async file => {
+    try {
+      const filePath = `${RNFS.DocumentDirectoryPath}/${file.title}`;
+      await RNFS.downloadFile({ fromUrl: file.url, toFile: filePath });
+      await FileViewer.open(filePath);
+    } catch (err) {
+      console.log("Arquivo não suportado");
+    }
+  };
+
+  handleUpload = () => {
+    ImagePicker.launchImageLibrary({}, async upload => {
+      if (upload.error) {
+        console.log("ImagePicker error");
+      } else if (upload.didCancel) {
+        console.log("Cancelado pelo usuário");
+      } else {
+        const data = new FormData();
+        const [prefix, suffix] = upload.fileName.split(".");
+        const ext = suffix.toLocaleLowerCase() === "heic" ? "jpg" : suffix;
+        data.append("file", {
+          //Vou enviar apenas os campos que eu quero para o backend
+          uri: upload.uri,
+          type: upload.type,
+          name: `${prefix}.${ext}`
+        });
+
+        api.post(`boxes/${this.state.box._id}/files`, data);
+      }
+    });
+  };
 
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.boxTitle}>{this.state.box.title}</Text>
+        <Text style={styles.boxTitle}>
+          {this.state.box.title /* Título da box */}
+        </Text>
+
         <FlatList
-         style={styles.list}
-         data={this.state.box.files}
-         keyExtractor={file => file._id}
-    ItemSeparatorComponent={() => <View style={styles.separator} /> }
-         renderItem={this.renderItem}
+          style={styles.list}
+          data={this.state.box.files /* Puxa um array de arquivos */}
+          keyExtractor={
+            file => file._id /*Vai atribuir um campo único a cada item*/
+          }
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          renderItem={this.renderItem}
         />
 
-       <TouchableOpacity style={styles.fab} onPress={this.handleUpload}>
-        <Icon name="cloud-upload" size={24} color="#FFF" />
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.fab} onPress={this.handleUpload}>
+          <Icon name="cloud-upload" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
     );
+  }
 }
-}
-
-

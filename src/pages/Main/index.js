@@ -1,39 +1,27 @@
-import React, { Component } from "react";
-import { View, Text, Image, TextInput, TouchableOpacity } from "react-native";
-import AsyncStorage from "@react-native-community/async-storage";
+import React, { Component } from 'react';
 
-import api from "../../services/api";
+import { View, Text, Image, TextInput, TouchableOpacity } from 'react-native';
 
-import styles from "./styles";
+import AsyncStorage from '@react-native-community/async-storage';
 
-import logo from "../../assets/logo.png";
+import styles from './styles';
+import api from '../../services/api';
+import logo from '../../assets/logo.png';
 
 export default class Main extends Component {
   state = {
-    newBox: ""
+    newBox: ''
   };
 
   async componentDidMount() {
-    const box = await AsyncStorage.getItem("@Mobilee:box");
-
-    if (box) {
-      this.props.navigation.navigate("Box");
-    }
+    const box = await AsyncStorage.getItem('@RocketBox:box');
+    if (box) this.props.navigation.navigate('Box');
   }
 
   handleSignIn = async () => {
-    //Quando o user clicar no botão
-    const response = await api.post("boxes", {
-      //response representa a requisição a api
-      //o método deve ser igual ao que está na api(post, get etc)
-      title: this.state.newBox
-      //Aqui vai o corpo da requisição. Não precisa ser em json, pois o axios já converte
-    });
-
-    await AsyncStorage.setItem("@Mobilee:box", response.data._id);
-
-    this.props.navigation.navigate("Box");
-    //No mobile, vai ser a prop navigation. O navigate usa o nome da rota por onde vai navegar
+    const response = await api.post('boxes', { title: this.state.newBox });
+    await AsyncStorage.setItem('@RocketBox:box', response.data._id);
+    this.props.navigation.navigate('Box'); // redireciona para outra tela
   };
 
   render() {
@@ -43,7 +31,7 @@ export default class Main extends Component {
 
         <TextInput
           style={styles.input}
-          placeholder="Crie uma box"
+          placeholder="Crie um box"
           placeholderTextColor="#999"
           autoCapitalize="none"
           autoCorrect={false}
