@@ -18,17 +18,18 @@ export default class Box extends Component {
   };
 
   async componentDidMount() {
-    const box = await AsyncStorage.getItem("@RocketBox:box");
+    const box = await AsyncStorage.getItem("@mobile:box");
     this.subscribeToNewFile(box);
 
     const response = await api.get(`boxes/${box}`);
     this.setState({ box: response.data });
   }
 
-  subscribeToNewFile = async box => {
+  subscribeToNewFile = box => {
     const io = socket("https://week-6-b.herokuapp.com");
 
     io.emit("connectRoom", box);
+
     io.on("file", data => {
       this.setState({
         box: { ...this.state.box, files: [data, ...this.state.box.files] }

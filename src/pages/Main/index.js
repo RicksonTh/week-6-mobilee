@@ -1,27 +1,27 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 
-import { View, Text, Image, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity } from "react-native";
 
-import AsyncStorage from '@react-native-community/async-storage';
+import AsyncStorage from "@react-native-community/async-storage";
 
-import styles from './styles';
-import api from '../../services/api';
-import logo from '../../assets/logo.png';
+import styles from "./styles";
+import api from "../../services/api";
+import logo from "../../assets/logo.png";
 
 export default class Main extends Component {
   state = {
-    newBox: ''
+    newBox: ""
   };
 
   async componentDidMount() {
-    const box = await AsyncStorage.getItem('@RocketBox:box');
-    if (box) this.props.navigation.navigate('Box');
+    const box = await AsyncStorage.getItem("@mobile:box");
+    if (box) this.props.navigation.navigate("Box");
   }
 
   handleSignIn = async () => {
-    const response = await api.post('boxes', { title: this.state.newBox });
-    await AsyncStorage.setItem('@RocketBox:box', response.data._id);
-    this.props.navigation.navigate('Box'); // redireciona para outra tela
+    const response = await api.post("boxes", { title: this.state.newBox });
+    await AsyncStorage.setItem("@mobile:box", response.data._id);
+    this.props.navigation.navigate("Box"); // redireciona para outra tela
   };
 
   render() {

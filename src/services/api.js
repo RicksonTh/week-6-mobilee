@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: 'https://omnistack-rocketbox-api.herokuapp.com'
+  baseURL: "https://week-6-b.herokuapp.com"
 });
 
 export default api;
